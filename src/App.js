@@ -47,7 +47,7 @@ const LennardWrestlingApp = () => {
 
 
   // Apps Script configuration
-  const APPS_SCRIPT_URL = process.env.URL_HERE;
+  const APPS_SCRIPT_URL = process.env.REACT_APP_URL_HERE;
 
   useEffect(() => {
     if (isAuthenticated) {
