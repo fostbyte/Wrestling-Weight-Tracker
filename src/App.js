@@ -54,7 +54,7 @@ const LennardWrestlingApp = () => {
       loadWrestlers();
       loadWeightData();
     }
-  }, [isAuthenticated, loadWrestlers, loadWeightData]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (selectedWrestler && showGraph) {
