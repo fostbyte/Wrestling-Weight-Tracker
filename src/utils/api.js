@@ -47,6 +47,8 @@ const api = {
   adminListSchools: () => adminApiFetch('list-schools'),
   createSchool: (name, login_code, password) => adminApiFetch('create-school', { name, login_code, password }),
   deleteSchool: (id) => adminApiFetch('delete-school', { school_id: id }),
+  updateWrestler: (payload) => apiFetch('update-wrestler', { method: 'POST', body: payload }),
+  deleteWrestler: (id) => apiFetch('delete-wrestler', { method: 'POST', body: { id } }),
 };
 
 export default api;
