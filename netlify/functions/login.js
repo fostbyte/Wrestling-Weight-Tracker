@@ -40,9 +40,6 @@ export async function handler(event) {
     const school = res.rows[0];
   
     const match = await bcrypt.compare(password_hash, school.password_hash);
-    console.log("password_hash", password_hash);
-    console.log("school.password_hash", school.password_hash);
-    console.log("match", match);
     if (!match) {
       return { statusCode: 401, body: JSON.stringify({ error: "Invalid credentials2" }) };
     }

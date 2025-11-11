@@ -26,7 +26,7 @@ const MainApp = () => {
   const style = { background: "#111827", minHeight: "100vh", color: "white" };
 
   return (
-    <div style={style}>
+    <div style={style} className="min-h-screen flex flex-col">
       <div style={{ background: school.primary_color, padding: 12 }}>
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold">{school.name || school.code}</h1>
@@ -40,7 +40,7 @@ const MainApp = () => {
         </div>
       </div>
 
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-6 max-w-6xl mx-auto flex-1 w-full">
         {currentPage === "home" && <WeightEntry />}
         {currentPage === "wrestlers" && <WrestlerList />}
         {currentPage === "graph" && <GraphView />}
