@@ -55,7 +55,14 @@ export default function WeightEntry() {
         </datalist>
 
         <label>Weight (lbs)</label>
-        <input value={weight} onChange={e => setWeight(e.target.value)} className="w-full p-2 mb-4 bg-gray-700" />
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          value={weight}
+          onChange={e => setWeight(e.target.value)}
+          className="w-full p-2 mb-4 bg-gray-700"
+        />
 
         <div className="mb-4">
           <label><input type="radio" checked={type==="before"} onChange={() => setType("before")} /> Before</label>
