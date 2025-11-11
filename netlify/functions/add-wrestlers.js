@@ -1,4 +1,4 @@
-// netlify/functions/wrestlers/get-wrestlers.js
+// netlify/functions/wrestlers/add-wrestler.js
 import { Client } from "pg";
 import jwt from "jsonwebtoken";
 
@@ -12,31 +12,28 @@ const verifyToken = (event) => {
   return jwt.verify(token, JWT_SECRET);
 };
 
-export default async function handler(event) {
+export async function handler(event) {
   try {
     const payload = verifyToken(event);
     const schoolId = payload.school_id;
+    const { firstName, lastName, weightClass, sex } = JSON.parse(event.body || "{}");
+
+    if (!firstName || !lastName) {
+      return { statusCode: 400, body: JSON.stringify({ error: "Missing fields" }) };
+    }
 
     const client = getClient();
     await client.connect();
 
-    const res = await client.query(
-      `SELECT id, first_name, last_name, weight_class, sex FROM wrestlers WHERE school_id = $1 ORDER BY last_name, first_name`,
-      [schoolId]
+    const insertRes = await client.query(
+      `INSERT INTO wrestlers (school_id, first_name, last_name, weight_class, sex) VALUES ($1,$2,$3,$4,$5) RETURNING id, first_name, last_name`,
+      [schoolId, firstName, lastName, weightClass || 0, sex]
     );
 
     await client.end();
 
-    const wrestlers = res.rows.map(r => ({
-      id: r.id,
-      firstName: r.first_name,
-      lastName: r.last_name,
-      name: `${r.first_name} ${r.last_name}`,
-      weightClass: r.weight_class,
-      sex: r.sex
-    }));
-
-    return { statusCode: 200, body: JSON.stringify({ wrestlers }) };
+    const r = insertRes.rows[0];
+    return { statusCode: 200, body: JSON.stringify({ success: true, wrestler: { id: r.id, firstName: r.first_name, lastName: r.last_name } }) };
   } catch (err) {
     console.error(err);
     return { statusCode: 401, body: JSON.stringify({ error: err.message }) };

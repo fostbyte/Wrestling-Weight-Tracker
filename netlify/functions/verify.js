@@ -2,7 +2,7 @@
 import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export default async function handler(event) {
+export async function handler(event) {
   const token = (event.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) {
     return { statusCode: 401, body: JSON.stringify({ error: "No token" }) };

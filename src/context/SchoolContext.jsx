@@ -6,6 +6,8 @@ export const SchoolContext = createContext();
 export const SchoolProvider = ({ children }) => {
   const [school, setSchool] = useState(() => {
     try {
+      const token = localStorage.getItem("lw_token");
+      if (!token) return null;
       return JSON.parse(localStorage.getItem("lw_school")) || null;
     } catch (e) {
       return null;

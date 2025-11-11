@@ -11,7 +11,7 @@ const verifyToken = (event) => {
   return jwt.verify(token, JWT_SECRET);
 };
 
-export default async function handler(event) {
+export async function handler(event) {
   try {
     const payload = verifyToken(event);
     const schoolId = payload.school_id;

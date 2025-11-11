@@ -1,7 +1,7 @@
 import { Client } from "pg";
 
-export default async function handler(event) {
-  const { token, school_id } = JSON.parse(event.body);
+export async function handler(event) {
+  const { token, school_id } = JSON.parse(event.body || "{}");
 
   if (token !== "MASTER_ADMIN") {
     return { statusCode: 401, body: "Unauthorized" };

@@ -13,7 +13,7 @@ export default function OptionsPanel() {
 
   const save = async () => {
     try {
-      const data = await apiFetch("schools/update-school-settings", {
+      const data = await apiFetch("update-schools-settings", {
         method: "POST",
         body: { name, password: password || undefined, primary_color: primary, secondary_color: secondary }
       });
@@ -36,10 +36,34 @@ export default function OptionsPanel() {
         <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 mb-4 bg-gray-700" />
 
         <label className="block mb-1">Primary Color (hex)</label>
-        <input value={primary} onChange={e => setPrimary(e.target.value)} className="w-full p-2 mb-4 bg-gray-700" />
+        <div className="flex items-center mb-4">
+          <input
+            type="color"
+            value={primary}
+            onChange={e => setPrimary(e.target.value)}
+            className="mr-3 h-10 w-16 p-0 bg-transparent border-0"
+          />
+          <input
+            value={primary}
+            onChange={e => setPrimary(e.target.value)}
+            className="flex-1 p-2 bg-gray-700"
+          />
+        </div>
 
         <label className="block mb-1">Secondary Color (hex)</label>
-        <input value={secondary} onChange={e => setSecondary(e.target.value)} className="w-full p-2 mb-4 bg-gray-700" />
+        <div className="flex items-center mb-4">
+          <input
+            type="color"
+            value={secondary}
+            onChange={e => setSecondary(e.target.value)}
+            className="mr-3 h-10 w-16 p-0 bg-transparent border-0"
+          />
+          <input
+            value={secondary}
+            onChange={e => setSecondary(e.target.value)}
+            className="flex-1 p-2 bg-gray-700"
+          />
+        </div>
 
         <button onClick={save} className="bg-purple-600 p-2 text-white rounded">Save Options</button>
         {message && <div className={`mt-3 ${message.type === "error" ? "text-red-400" : "text-green-400"}`}>{message.text}</div>}

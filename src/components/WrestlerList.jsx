@@ -15,7 +15,7 @@ export default function WrestlerList() {
 
   const load = async () => {
     try {
-      const data = await apiFetch("wrestlers/get-wrestlers");
+      const data = await apiFetch("get-wrestlers");
       setWrestlers(data.wrestlers);
     } catch (e) { console.error(e); }
   };
@@ -25,12 +25,13 @@ export default function WrestlerList() {
   const add = async () => {
     setLoading(true);
     try {
-      await apiFetch("wrestlers/add-wrestler", { method: "POST", body: { firstName: newFirstName, lastName: newLastName, weightClass: newWeight, sex: newSex } });
+      await apiFetch("add-wrestlers", { method: "POST", body: { firstName: newFirstName, lastName: newLastName, weightClass: newWeight, sex: newSex } });
       setNewFirstName(""); setNewLastName(""); setNewWeight("");
       load();
     } catch (e) { alert(e.message); }
     setLoading(false);
   };
+      
 
   return (
     <div>

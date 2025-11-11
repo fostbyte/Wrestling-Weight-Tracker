@@ -1,5 +1,5 @@
-export default async function handler(event) {
-  const { username, password } = JSON.parse(event.body);
+export async function handler(event) {
+  const { username, password } = JSON.parse(event.body || "{}");
 
   if (
     username === process.env.ADMIN_USERNAME &&

@@ -1,16 +1,26 @@
 // src/App.jsx
 import React, { useContext } from "react";
 import { SchoolProvider, SchoolContext } from "./context/SchoolContext";
-import LoginScreen from "./components/LoginScreen";
 import WeightEntry from "./components/WeightEntry";
 import WrestlerList from "./components/WrestlerList";
 import GraphView from "./components/GraphView";
 import OptionsPanel from "./components/OptionsPanel";
+import AdminLogin from "./components/AdminLogin";
+import AdminDashboard from "./components/AdminDashboard";
+import LoginScreen from "./components/LoginScreen";
 
 const MainApp = () => {
   const { school, logout } = useContext(SchoolContext);
   const [currentPage, setCurrentPage] = React.useState("home");
 
+  const handleAdminLogout = () => {
+    localStorage.removeItem("admin_token");
+  };
+
+  // Simple routing for admin panel
+  if (window.location.pathname === "/admin") {
+    return <AdminLogin />;
+  }
   if (!school) return <LoginScreen />;
 
   const style = { background: "#111827", minHeight: "100vh", color: "white" };

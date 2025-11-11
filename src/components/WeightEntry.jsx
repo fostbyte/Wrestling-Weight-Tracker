@@ -16,7 +16,7 @@ export default function WeightEntry() {
 
   const loadWrestlers = async () => {
     try {
-      const data = await apiFetch("wrestlers/get-wrestlers");
+      const data = await apiFetch("get-wrestlers");
       setWrestlers(data.wrestlers);
     } catch (e) { console.error(e); }
   };
@@ -27,12 +27,12 @@ export default function WeightEntry() {
       const [firstName, ...rest] = selected.split(" ");
       const lastName = rest.join(" ");
       const dateToUse = customDate || new Date().toLocaleDateString("en-US");
-      await apiFetch("weights/add-weight-record", {
+      await apiFetch("add-weight-record", {
         method: "POST",
         body: { firstName, lastName, date: dateToUse, weight, type }
       });
       alert("Saved");
-      setSelected(""); setWeight(""); setCustomDate("");
+     setWeight(""); setCustomDate("");
     } catch (e) { alert(e.message); }
   };
 
@@ -41,10 +41,18 @@ export default function WeightEntry() {
       <h2 className="text-2xl font-bold mb-4">Record Weight - {school.name || school.code}</h2>
       <div className="bg-gray-800 p-6 rounded">
         <label>Wrestler</label>
-        <select value={selected} onChange={e => setSelected(e.target.value)} className="w-full p-2 mb-4 bg-gray-700">
-          <option value="">Choose</option>
-          {wrestlers.map(w => <option key={w.id} value={`${w.firstName} ${w.lastName}`}>{w.name} ({w.weightClass})</option>)}
-        </select>
+        <input
+          list="wrestler-list"
+          value={selected}
+          onChange={e => setSelected(e.target.value)}
+          placeholder="Start typing a name..."
+          className="w-full p-2 mb-4 bg-gray-700"
+        />
+        <datalist id="wrestler-list">
+          {wrestlers.map(w => (
+            <option key={w.id} value={`${w.firstName} ${w.lastName}`}>{w.name} ({w.weightClass})</option>
+          ))}
+        </datalist>
 
         <label>Weight (lbs)</label>
         <input value={weight} onChange={e => setWeight(e.target.value)} className="w-full p-2 mb-4 bg-gray-700" />

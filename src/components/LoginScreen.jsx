@@ -1,6 +1,6 @@
 // src/components/LoginScreen.jsx
 import React, { useState, useContext } from "react";
-import { apiFetch } from "../utils/api";
+import api from "../utils/api";
 import { SchoolContext } from "../context/SchoolContext";
 
 export default function LoginScreen() {
@@ -13,16 +13,11 @@ export default function LoginScreen() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("/.netlify/functions/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, password })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
-
+      const data = await api.login(code, password);
       setAuth({ token: data.token, school: data.school, remember });
     } catch (err) {
+      console.log(err);
+      console.log(err.message);
       setNotification({ type: "error", message: err.message });
     }
   };
