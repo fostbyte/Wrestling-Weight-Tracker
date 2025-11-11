@@ -11,3 +11,18 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Ensure form field text is black while typing */
+input,
+select,
+textarea {
+  color: #000 !important;
+  caret-color: #000;
+}
+
+/* Make placeholder text dark as well for consistency */
+input::placeholder,
+textarea::placeholder {
+  color: #000;
+  opacity: 0.6;
+}
