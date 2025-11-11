@@ -18,6 +18,8 @@ export default function WrestlerList() {
   const [editLast, setEditLast] = useState("");
   const [editWeight, setEditWeight] = useState("");
   const [editSex, setEditSex] = useState("Male");
+  const [filterText, setFilterText] = useState("");
+  const [sortBy, setSortBy] = useState("first"); // first | last | weight
 
   const load = async () => {
     try {
@@ -89,49 +91,95 @@ export default function WrestlerList() {
         </div>
       </div>
 
-      <div className="bg-gray-800 p-4 rounded overflow-x-auto">
-        <table className="min-w-full">
-          <thead><tr><th>First</th><th>Last</th><th>Weight</th><th>Sex</th><th>Actions</th></tr></thead>
-          <tbody>
-            {wrestlers.map(w => (
-              <tr key={w.id} className="border-t">
+      {/* Filter input above the cards */}
+      <div className="bg-gray-800 p-4 rounded mb-3">
+        <input
+          placeholder="Filter by name or weight class"
+          value={filterText}
+          onChange={e => setFilterText(e.target.value)}
+          className="w-full p-2 bg-gray-700"
+        />
+      </div>
+ <div className="flex items-center gap-4 text-sm text-gray-300 mb-3">
+            <span className="opacity-80">Sort by:</span>
+            <label className="inline-flex items-center gap-1 cursor-pointer">
+              <input type="radio" name="sortby" checked={sortBy === "first"} onChange={() => setSortBy("first")} />
+              <span>First</span>
+            </label>
+            <label className="inline-flex items-center gap-1 cursor-pointer">
+              <input type="radio" name="sortby" checked={sortBy === "last"} onChange={() => setSortBy("last")} />
+              <span>Last</span>
+            </label>
+            <label className="inline-flex items-center gap-1 cursor-pointer">
+              <input type="radio" name="sortby" checked={sortBy === "weight"} onChange={() => setSortBy("weight")} />
+              <span>Weight</span>
+            </label>
+          </div>
+      {/* Scrollable, responsive cards */}
+      <div className="bg-gray-800 p-4 rounded max-h-[60vh] overflow-y-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {wrestlers
+            .filter(w => {
+              const f = filterText.trim().toLowerCase();
+              if (!f) return true;
+              return (
+                (w.firstName || "").toLowerCase().includes(f) ||
+                (w.lastName || "").toLowerCase().includes(f) ||
+                String(w.weightClass || "").toLowerCase().includes(f)
+              );
+            })
+            .slice()
+            .sort((a, b) => {
+              const aFirst = (a.firstName || "").toLowerCase();
+              const aLast = (a.lastName || "").toLowerCase();
+              const bFirst = (b.firstName || "").toLowerCase();
+              const bLast = (b.lastName || "").toLowerCase();
+              const aW = String(a.weightClass ?? "").toLowerCase();
+              const bW = String(b.weightClass ?? "").toLowerCase();
+              if (sortBy === "last") return aLast.localeCompare(bLast) || aFirst.localeCompare(bFirst);
+              if (sortBy === "weight") return aW.localeCompare(bW) || aLast.localeCompare(bLast) || aFirst.localeCompare(bFirst);
+              return aFirst.localeCompare(bFirst) || aLast.localeCompare(bLast);
+            })
+            .map(w => (
+              <div
+                key={w.id}
+                className={
+                  `relative bg-gray-700 rounded p-2 sm:p-4 ` +
+                  (editingId === w.id ? `sm:col-span-2 md:col-span-2 lg:col-span-2 xl:col-span-2` : ``)
+                }
+              >
                 {editingId === w.id ? (
-                  <>
-                    <td><input value={editFirst} onChange={e => setEditFirst(e.target.value)} className="p-1 bg-gray-700 w-full" /></td>
-                    <td><input value={editLast} onChange={e => setEditLast(e.target.value)} className="p-1 bg-gray-700 w-full" /></td>
-                    <td><input type="number" inputMode="numeric" step="1" value={editWeight} onChange={e => setEditWeight(e.target.value)} className="p-1 bg-gray-700 w-full" /></td>
-                    <td>
-                      <select value={editSex} onChange={e => setEditSex(e.target.value)} className="p-1 bg-gray-700 w-full">
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input value={editFirst} onChange={e => setEditFirst(e.target.value)} className="p-2 bg-gray-600 flex-1 text-sm sm:text-base" placeholder="First" />
+                      <input value={editLast} onChange={e => setEditLast(e.target.value)} className="p-2 bg-gray-600 flex-1 text-sm sm:text-base" placeholder="Last" />
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="number" inputMode="numeric" step="1" value={editWeight} onChange={e => setEditWeight(e.target.value)} className="p-2 bg-gray-600 flex-1 text-sm sm:text-base" placeholder="Weight" />
+                      <select value={editSex} onChange={e => setEditSex(e.target.value)} className="p-2 bg-gray-600 text-sm sm:text-base">
                         <option>Male</option>
                         <option>Female</option>
                       </select>
-                    </td>
-                    <td className="whitespace-nowrap">
-                      <button onClick={saveEdit} className="bg-green-600 text-white px-2 py-1 rounded mr-2">Save</button>
-                      <button onClick={cancelEdit} className="bg-gray-600 text-white px-2 py-1 rounded">Cancel</button>
-                    </td>
-                  </>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={saveEdit} className="bg-green-600 text-white px-2 py-1 sm:px-3 sm:py-2 rounded flex-1">Save</button>
+                      <button onClick={cancelEdit} className="bg-gray-500 text-white px-2 py-1 sm:px-3 sm:py-2 rounded flex-1">Cancel</button>
+                    </div>
+                  </div>
                 ) : (
                   <>
-                    <td>{w.firstName}</td>
-                    <td>{w.lastName}</td>
-                    <td>{w.weightClass}</td>
-                    <td>{w.sex}</td>
-                    <td className="relative">
-                      <button onClick={() => toggleMenu(w.id)} className="px-2 py-1 rounded bg-gray-700">⋮</button>
-                      {menuOpenId === w.id && (
-                        <div className="absolute z-10 mt-1 right-0 bg-gray-700 rounded shadow p-1">
-                          <button onClick={() => startEdit(w)} className="block w-full text-left px-3 py-1 hover:bg-gray-600">Edit</button>
-                          <button onClick={() => deleteRow(w.id)} className="block w-full text-left px-3 py-1 hover:bg-gray-600 text-red-300">Delete</button>
-                        </div>
-                      )}
-                    </td>
+                    <div className="text-base sm:text-lg font-semibold">{w.firstName} {w.lastName}</div>
+                    <div className="text-xs sm:text-sm text-gray-300 mt-1">Weight Class: {w.weightClass || "-"}</div>
+                    <div className="text-xs sm:text-sm text-gray-300">Sex: {w.sex || "-"}</div>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => startEdit(w)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 sm:px-3 sm:py-2 rounded">Edit</button>
+                      <button onClick={() => deleteRow(w.id)} className="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 sm:px-3 sm:py-2 rounded">Delete</button>
+                    </div>
                   </>
                 )}
-              </tr>
+              </div>
             ))}
-          </tbody>
-        </table>
+        </div>
       </div>
     </div>
   );
