@@ -1,13 +1,16 @@
 // src/components/GraphView.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { apiFetch } from "../utils/api";
+import { SchoolContext } from "../context/SchoolContext";
+import { useWrestlers } from "../context/WrestlersContext";
 
 export default function GraphView() {
+  const { school } = useContext(SchoolContext);
+  const { wrestlers } = useWrestlers();
   const [weights, setWeights] = useState([]);
   const [selectedName, setSelectedName] = useState("");
   const [dataReady, setDataReady] = useState(false);
-  const [wrestlers, setWrestlers] = useState([]);
   const [oneLine, setOneLine] = useState(() => {
     try { return JSON.parse(localStorage.getItem("graph_one_line") || "false"); } catch { return false; }
   });
@@ -29,15 +32,7 @@ export default function GraphView() {
     } catch (e) { console.error(e); }
   };
 
-  useEffect(() => {
-    const fetchWrestlers = async () => {
-      try {
-        const data = await apiFetch("get-wrestlers");
-        setWrestlers(data.wrestlers || []);
-      } catch (e) { console.error(e); }
-    };
-    fetchWrestlers();
-  }, []);
+  // wrestlers list now comes from shared cache; no fetching here
 
   useEffect(() => {
     try { localStorage.setItem("graph_one_line", JSON.stringify(oneLine)); } catch {}
@@ -78,8 +73,8 @@ export default function GraphView() {
     const pts = [];
     datesTimeline.forEach((date, idx) => {
       const g = grouped[date] || { before: null, after: null };
-      if (g.before != null) pts.push({ x: idx, date, weight: g.before });
-      if (g.after != null) pts.push({ x: idx + 0.2, date, weight: g.after });
+      if (g.before != null) pts.push({ x: idx, date, before: g.before });
+      if (g.after != null) pts.push({ x: idx + 0.2, date, after: g.after });
     });
     return pts;
   })();
@@ -123,8 +118,8 @@ export default function GraphView() {
                 <YAxis stroke="#999" />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="before" stroke="#a855f7" />
-                <Line type="monotone" dataKey="after" stroke="#f59e0b" />
+                <Line type="monotone" dataKey="before" stroke={school?.primary_color || "#a855f7"} />
+                <Line type="monotone" dataKey="after" stroke={school?.secondary_color || "#f59e0b"} />
               </LineChart>
             ) : (
               <LineChart data={chartData}>
@@ -139,7 +134,8 @@ export default function GraphView() {
                   return datesTimeline[i] || "";
                 }} />
                 <Legend />
-                <Line type="monotone" dataKey="weight" stroke="#a855f7" />
+                <Line type="monotone" dataKey="before" stroke={school?.primary_color || "#a855f7"} />
+                <Line type="monotone" dataKey="after" stroke={school?.secondary_color || "#f59e0b"} />
               </LineChart>
             )}
           </ResponsiveContainer>
