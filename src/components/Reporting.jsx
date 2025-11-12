@@ -229,8 +229,10 @@ export default function Reporting() {
       })()}
 
       {reportType === "missing" && (() => {
-        const list = allOrSelected.filter(w => (perWrestler.get(w.id) || []).length > 0)
-          .map(w => ({ w, val: missingCountFor(w.id) }));
+        const list = allOrSelected
+          .filter(w => (perWrestler.get(w.id) || []).length > 0)
+          .map(w => ({ w, val: missingCountFor(w.id) }))
+          .sort((a,b) => b.val - a.val);
         const half = Math.ceil(list.length / 2);
         const left = list.slice(0, half);
         const right = list.slice(half);
