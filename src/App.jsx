@@ -6,16 +6,15 @@ import WrestlerList from "./components/WrestlerList";
 import GraphView from "./components/GraphView";
 import OptionsPanel from "./components/OptionsPanel";
 import AdminLogin from "./components/AdminLogin";
-import AdminDashboard from "./components/AdminDashboard";
 import LoginScreen from "./components/LoginScreen";
+import Reporting from "./components/Reporting";
+import { NotifyProvider } from "./context/NotifyContext";
+import { WrestlersProvider } from "./context/WrestlersContext";
 
 const MainApp = () => {
   const { school, logout } = useContext(SchoolContext);
   const [currentPage, setCurrentPage] = React.useState("home");
 
-  const handleAdminLogout = () => {
-    localStorage.removeItem("admin_token");
-  };
 
   // Simple routing for admin panel
   if (window.location.pathname === "/admin") {
@@ -34,6 +33,7 @@ const MainApp = () => {
             <button onClick={() => setCurrentPage("home")} className="mr-2">Home</button>
             <button onClick={() => setCurrentPage("wrestlers")} className="mr-2">Roster</button>
             <button onClick={() => setCurrentPage("graph")} className="mr-2">Graph</button>
+            <button onClick={() => setCurrentPage("reporting")} className="mr-2">Reporting</button>
             <button onClick={() => setCurrentPage("options")} className="mr-2">Options</button>
             <button onClick={logout} className="ml-4">Logout</button>
           </div>
@@ -44,6 +44,7 @@ const MainApp = () => {
         {currentPage === "home" && <WeightEntry />}
         {currentPage === "wrestlers" && <WrestlerList />}
         {currentPage === "graph" && <GraphView />}
+        {currentPage === "reporting" && <Reporting />}
         {currentPage === "options" && <OptionsPanel />}
       </div>
     </div>
@@ -52,8 +53,12 @@ const MainApp = () => {
 
 export default function AppWrapper() {
   return (
-    <SchoolProvider>
-      <MainApp />
-    </SchoolProvider>
+    <NotifyProvider>
+      <SchoolProvider>
+        <WrestlersProvider>
+          <MainApp />
+        </WrestlersProvider>
+      </SchoolProvider>
+    </NotifyProvider>
   );
 }

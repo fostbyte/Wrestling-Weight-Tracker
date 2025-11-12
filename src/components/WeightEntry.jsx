@@ -3,10 +3,13 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { apiFetch } from "../utils/api";
 import { SchoolContext } from "../context/SchoolContext";
+import { useNotify } from "../context/NotifyContext";
+import { useWrestlers } from "../context/WrestlersContext";
 
 export default function WeightEntry() {
   const { school } = useContext(SchoolContext);
-  const [wrestlers, setWrestlers] = useState([]);
+  const { notify } = useNotify();
+  const { wrestlers, ensureLoaded } = useWrestlers();
   const [selected, setSelected] = useState("");
   const [weight, setWeight] = useState("");
   const [type, setType] = useState("before");
@@ -24,14 +27,7 @@ export default function WeightEntry() {
   });
   const weightInputRef = useRef(null);
 
-  useEffect(() => { loadWrestlers(); }, []);
-
-  const loadWrestlers = async () => {
-    try {
-      const data = await apiFetch("get-wrestlers");
-      setWrestlers(data.wrestlers);
-    } catch (e) { console.error(e); }
-  };
+  useEffect(() => { ensureLoaded(); }, [ensureLoaded]);
  
   useEffect(() => {
     try { localStorage.setItem("hide_weighed_in", JSON.stringify(hideWeighedIn)); } catch {}
@@ -64,7 +60,7 @@ export default function WeightEntry() {
 
   const submit = async () => {
     try {
-      if (!selected || !weight) return alert("Select wrestler and weight");
+      if (!selected || !weight) return notify("Select wrestler and weight", "warning");
       const [firstName, ...rest] = selected.split(" ");
       const lastName = rest.join(" ");
       const dateToUse = customDate
@@ -76,7 +72,7 @@ export default function WeightEntry() {
         method: "POST",
         body: { firstName, lastName, date: dateToUse, weight, type }
       });
-      alert("Saved");
+      notify("Saved", "success");
      setWeight(""); 
  
       if (hideWeighedIn) {
@@ -85,7 +81,7 @@ export default function WeightEntry() {
           setHiddenMap(prev => ({ ...prev, [matched.id]: Date.now() }));
         }
       }
-    } catch (e) { alert(e.message); }
+    } catch (e) { notify(e.message, "error"); }
   };
 
   const chooseWrestler = (w, t) => {
@@ -118,18 +114,13 @@ export default function WeightEntry() {
           />
           <div className="flex items-center gap-4 text-sm text-gray-300 mb-3">
             <span className="opacity-80">Sort by:</span>
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input type="radio" name="sortby" checked={sortBy === "first"} onChange={() => setSortBy("first")} />
-              <span>First</span>
-            </label>
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input type="radio" name="sortby" checked={sortBy === "last"} onChange={() => setSortBy("last")} />
-              <span>Last</span>
-            </label>
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input type="radio" name="sortby" checked={sortBy === "weight"} onChange={() => setSortBy("weight")} />
-              <span>Weight</span>
-            </label>
+            <div className="bg-gray-700 rounded-md overflow-hidden">
+              <div className="flex text-sm">
+                <button type="button" onClick={() => setSortBy("first")} className={`px-3 py-2 ${sortBy==="first"?"bg-purple-600 text-white":"text-gray-200"}`}>First</button>
+                <button type="button" onClick={() => setSortBy("last")} className={`px-3 py-2 ${sortBy==="last"?"bg-purple-600 text-white":"text-gray-200"}`}>Last</button>
+                <button type="button" onClick={() => setSortBy("weight")} className={`px-3 py-2 ${sortBy==="weight"?"bg-purple-600 text-white":"text-gray-200"}`}>Weight</button>
+              </div>
+            </div>
           </div>
           <div className="max-h-[40vh] overflow-y-auto">
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -156,32 +147,34 @@ export default function WeightEntry() {
                   if (sortBy === "weight") return aW.localeCompare(bW) || aLast.localeCompare(bLast) || aFirst.localeCompare(bFirst);
                   return aFirst.localeCompare(bFirst) || aLast.localeCompare(bLast);
                 })
-                .map(w => (
+                .map(w => {
+                  const isSel = selected === `${w.firstName} ${w.lastName}`;
+                  const primary = school?.primary_color || "#7c3aed";
+                  const secondary = school?.secondary_color || "#f59e0b";
+                  const bg = !isSel ? "#374151" : (type === "before" ? primary : secondary);
+                  const ringColor = isSel ? (type === "before" ? primary : secondary) : "transparent";
+                  return (
                   <div
                     key={w.id}
-                    className={
-                      `rounded p-2 sm:p-3 transition-colors ring-offset-2 ` +
-                      (selected === `${w.firstName} ${w.lastName}`
-                        ? (type === "before"
-                            ? `bg-purple-700 ring-2 ring-purple-400`
-                            : `bg-amber-600 ring-2 ring-amber-300`)
-                        : `bg-gray-700`)
-                    }
+                    className={`rounded p-2 sm:p-3 transition-colors`}
+                    style={{ backgroundColor: bg, boxShadow: isSel ? `0 0 0 2px ${ringColor}` : "none" }}
                   >
                     <div className="text-base sm:text-lg font-semibold">{w.firstName} {w.lastName}</div>
                     <div className="text-xs sm:text-sm text-gray-300 mb-2">Weight Class: {w.weightClass || "-"}</div>
                     <div className="flex gap-2">
                       <button
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 sm:px-3 sm:py-2 rounded"
+                        className="flex-1 text-white px-2 py-1 sm:px-3 sm:py-2 rounded"
+                        style={{ backgroundColor: primary }}
                         onClick={() => chooseWrestler(w, "before")}
                       >Before</button>
                       <button
-                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 sm:px-3 sm:py-2 rounded"
+                        className="flex-1 text-white px-2 py-1 sm:px-3 sm:py-2 rounded"
+                        style={{ backgroundColor: secondary }}
                         onClick={() => chooseWrestler(w, "after")}
                       >After</button>
                     </div>
                   </div>
-                ))}
+                );})}
             </div>
           </div>
         </div>
@@ -198,8 +191,10 @@ export default function WeightEntry() {
         />
 
         <div className="mb-4">
-          <label><input type="radio" checked={type==="before"} onChange={() => setType("before")} /> Before</label>
-          <label className="ml-4"><input type="radio" checked={type==="after"} onChange={() => setType("after")} /> After</label>
+          <div className="bg-gray-700 rounded-md overflow-hidden inline-flex">
+            <button type="button" onClick={() => setType("before")} className={`px-3 py-2 ${type==="before"?"text-white":"text-gray-200"}`} style={{ backgroundColor: type==="before" ? (school?.primary_color || "#7c3aed") : "transparent" }}>Before</button>
+            <button type="button" onClick={() => setType("after")} className={`px-3 py-2 ${type==="after"?"text-white":"text-gray-200"}`} style={{ backgroundColor: type==="after" ? (school?.secondary_color || "#f59e0b") : "transparent" }}>After</button>
+          </div>
         </div>
 
         <label>Date (optional)</label>

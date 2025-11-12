@@ -3,10 +3,13 @@
 import React, { useEffect, useState, useContext } from "react";
 import api, { apiFetch } from "../utils/api";
 import { SchoolContext } from "../context/SchoolContext";
+import { useNotify } from "../context/NotifyContext";
+import { useWrestlers } from "../context/WrestlersContext";
 
 export default function WrestlerList() {
   const { school } = useContext(SchoolContext);
-  const [wrestlers, setWrestlers] = useState([]);
+  const { notify, confirm } = useNotify();
+  const { wrestlers, ensureLoaded, refresh } = useWrestlers();
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [newWeight, setNewWeight] = useState("");
@@ -22,22 +25,15 @@ export default function WrestlerList() {
   const [filterText, setFilterText] = useState("");
   const [sortBy, setSortBy] = useState("first"); // first | last | weight
 
-  const load = async () => {
-    try {
-      const data = await apiFetch("get-wrestlers");
-      setWrestlers(data.wrestlers);
-    } catch (e) { console.error(e); }
-  };
-
-  useEffect(() => { load(); }, []);
+  useEffect(() => { ensureLoaded(); }, [ensureLoaded]);
 
   const add = async () => {
     setLoading(true);
     try {
       await apiFetch("add-wrestlers", { method: "POST", body: { firstName: newFirstName, lastName: newLastName, weightClass: newWeight, sex: newSex } });
       setNewFirstName(""); setNewLastName(""); setNewWeight("");
-      load();
-    } catch (e) { alert(e.message); }
+      await refresh();
+    } catch (e) { notify(e.message, "error"); }
     setLoading(false);
   };
   
@@ -58,21 +54,22 @@ export default function WrestlerList() {
     try {
       await api.updateWrestler({ id: editingId, firstName: editFirst, lastName: editLast, weightClass: editWeight, sex: editSex });
       setEditingId(null);
-      await load();
-    } catch (e) { alert(e.message); }
+      await refresh();
+    } catch (e) { notify(e.message, "error"); }
   };
 
   const deleteRow = async (id) => {
     setMenuOpenId(null);
     setDeletingId(id);
-    if (!window.confirm("Delete this wrestler and their weights?")) {
+    const ok = await confirm("Delete this wrestler and their weights?");
+    if (!ok) {
       setDeletingId(null);
       return;
     }
     try {
       await api.deleteWrestler(id);
-      await load();
-    } catch (e) { alert(e.message); }
+      await refresh();
+    } catch (e) { notify(e.message, "error"); }
     setDeletingId(null);
   };
   
@@ -106,21 +103,16 @@ export default function WrestlerList() {
           className="w-full p-2 bg-gray-700"
         />
       </div>
- <div className="flex items-center gap-4 text-sm text-gray-300 mb-3">
-            <span className="opacity-80">Sort by:</span>
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input type="radio" name="sortby" checked={sortBy === "first"} onChange={() => setSortBy("first")} />
-              <span>First</span>
-            </label>
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input type="radio" name="sortby" checked={sortBy === "last"} onChange={() => setSortBy("last")} />
-              <span>Last</span>
-            </label>
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input type="radio" name="sortby" checked={sortBy === "weight"} onChange={() => setSortBy("weight")} />
-              <span>Weight</span>
-            </label>
+      <div className="flex items-center gap-4 text-sm text-gray-300 mb-3">
+        <span className="opacity-80">Sort by:</span>
+        <div className="bg-gray-700 rounded-md overflow-hidden">
+          <div className="flex text-sm">
+            <button type="button" onClick={() => setSortBy("first")} className={`px-3 py-2 ${sortBy==="first"?"bg-purple-600 text-white":"text-gray-200"}`}>First</button>
+            <button type="button" onClick={() => setSortBy("last")} className={`px-3 py-2 ${sortBy==="last"?"bg-purple-600 text-white":"text-gray-200"}`}>Last</button>
+            <button type="button" onClick={() => setSortBy("weight")} className={`px-3 py-2 ${sortBy==="weight"?"bg-purple-600 text-white":"text-gray-200"}`}>Weight</button>
           </div>
+        </div>
+      </div>
       {/* Scrollable, responsive cards */}
       <div className="bg-gray-800 p-4 rounded max-h-[60vh] overflow-y-auto">
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
