@@ -14,6 +14,7 @@ export default function WrestlerList() {
   const [loading, setLoading] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [editFirst, setEditFirst] = useState("");
   const [editLast, setEditLast] = useState("");
   const [editWeight, setEditWeight] = useState("");
@@ -63,11 +64,16 @@ export default function WrestlerList() {
 
   const deleteRow = async (id) => {
     setMenuOpenId(null);
-    if (!window.confirm("Delete this wrestler and their weights?")) return;
+    setDeletingId(id);
+    if (!window.confirm("Delete this wrestler and their weights?")) {
+      setDeletingId(null);
+      return;
+    }
     try {
       await api.deleteWrestler(id);
       await load();
     } catch (e) { alert(e.message); }
+    setDeletingId(null);
   };
   
   const toggleMenu = (id) => {
@@ -144,8 +150,12 @@ export default function WrestlerList() {
               <div
                 key={w.id}
                 className={
-                  `relative bg-gray-700 rounded p-2 sm:p-4 ` +
-                  (editingId === w.id ? `sm:col-span-2 md:col-span-2 lg:col-span-2 xl:col-span-2` : ``)
+                  `relative rounded p-2 sm:p-4 transition-colors ring-offset-2 ` +
+                  (editingId === w.id
+                    ? `bg-blue-700 ring-2 ring-blue-400 sm:col-span-2 md:col-span-2 lg:col-span-2 xl:col-span-2`
+                    : deletingId === w.id
+                      ? `bg-red-700 ring-2 ring-red-400`
+                      : `bg-gray-700`)
                 }
               >
                 {editingId === w.id ? (

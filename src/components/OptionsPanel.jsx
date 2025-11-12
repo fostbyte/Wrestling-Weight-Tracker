@@ -10,6 +10,9 @@ export default function OptionsPanel() {
   const [primary, setPrimary] = useState(school.primary_color || "#7c3aed");
   const [secondary, setSecondary] = useState(school.secondary_color || "#fbbf24");
   const [message, setMessage] = useState(null);
+  const [includeWeekends, setIncludeWeekends] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("include_weekends") || "false"); } catch { return false; }
+  });
 
   const save = async () => {
     try {
@@ -19,6 +22,7 @@ export default function OptionsPanel() {
       });
       setSchool(prev => ({ ...prev, name: data.school.name, primary_color: data.school.primary_color, secondary_color: data.school.secondary_color }));
       setPassword("");
+      try { localStorage.setItem("include_weekends", JSON.stringify(includeWeekends)); } catch {}
       setMessage({ type: "success", text: "Saved" });
     } catch (e) {
       setMessage({ type: "error", text: e.message });
@@ -63,6 +67,13 @@ export default function OptionsPanel() {
             onChange={e => setSecondary(e.target.value)}
             className="flex-1 p-2 bg-gray-700"
           />
+        </div>
+
+        <div className="mb-4">
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={includeWeekends} onChange={e => setIncludeWeekends(e.target.checked)} />
+            <span>Include weekends in graphs</span>
+          </label>
         </div>
 
         <button onClick={save} className="bg-purple-600 p-2 text-white rounded">Save Options</button>
