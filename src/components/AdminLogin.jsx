@@ -17,8 +17,10 @@ export default function AdminLogin() {
       const data = await api.adminLogin(username, password);
       localStorage.setItem("admin_token", data.token);
       setAdminToken(data.token);
+      setPassword("");
     } catch (err) {
       setNotification({ type: "error", message: err.message });
+      setPassword("");
     }
   };
 
@@ -36,11 +38,11 @@ export default function AdminLogin() {
       <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
         <h1 className="text-3xl font-bold text-purple-400 mb-6 text-center">Admin Login</h1>
         {notification && <div className="mb-4 text-red-400">{notification.message}</div>}
-        <form onSubmit={handleAdminLogin}>
+        <form onSubmit={handleAdminLogin} autoComplete="off">
           <label className="block mb-2">Username</label>
           <input value={username} onChange={e => setUsername(e.target.value)} className="w-full p-3 mb-4 bg-gray-700 rounded" />
           <label className="block mb-2">Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 mb-4 bg-gray-700 rounded" />
+          <input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 mb-4 bg-gray-700 rounded" />
           <button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded">Login</button>
         </form>
       </div>
