@@ -13,6 +13,7 @@ export default function Reporting() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [showMissedDates, setShowMissedDates] = useState(false);
 
   // Do not auto-refresh data on mount. User must click "Update data".
 
@@ -101,27 +102,29 @@ export default function Reporting() {
     return miss;
   };
 
+  const missingDatesFor = (wid) => {
+    const arr = perWrestler.get(wid) || [];
+    const haveBefore = new Set();
+    for (const r of arr) if (r.type === "before") haveBefore.add(new Date(r.date).toISOString().slice(0,10));
+    const list = [];
+    for (const d of practiceDates) if (!haveBefore.has(d)) list.push(d);
+    return list;
+  };
+
   const startPrint = () => window.print();
 
   const updateData = async () => {
     setUpdating(true);
     try {
-      const targets = (selectAll ? filteredWrestlers : filteredWrestlers.filter(w => selectedIds.includes(w.id)));
-      const all = [];
-      for (const w of targets) {
-        const name = `${w.firstName || ""} ${w.lastName || ""}`.trim();
-        if (!name) continue;
-        try {
-          const data = await apiFetch(`get-weight-history?wrestler=${encodeURIComponent(name)}`);
-          const records = (data.weights || []).map(r => ({
-            ...r,
-            wrestlerId: r.wrestlerId ?? r.wrestler_id ?? w.id,
-          }));
-          all.push(...records);
-        } catch (e) {
-        }
-      }
+      const sexParam = sexFilter === "All" ? "" : sexFilter;
+      const qs = sexParam ? `?sex=${encodeURIComponent(sexParam)}` : "";
+      const data = await apiFetch(`get-weight-history${qs}`);
+      const all = (data.weights || []).map(r => ({
+        ...r,
+        wrestlerId: r.wrestlerId ?? r.wrestler_id,
+      }));
       setWeights(all);
+      // cache is the in-memory state; retained until next Update
     } finally {
       setUpdating(false);
     }
@@ -150,6 +153,12 @@ export default function Reporting() {
           </div>
         </div>
         {reportType === "graphs" && null}
+        {reportType === "missing" && (
+          <label className="inline-flex items-center gap-2 text-sm text-gray-200">
+            <input type="checkbox" checked={showMissedDates} onChange={e => setShowMissedDates(e.target.checked)} />
+            <span>Show dates of missed practices</span>
+          </label>
+        )}
         <button onClick={updateData} disabled={updating} className="bg-gray-600 p-2 text-white rounded">{updating?"Updating...":"Update data"}</button>
         <button onClick={startPrint} className="bg-purple-600 p-2 text-white rounded">Print</button>
       </div>
@@ -245,9 +254,33 @@ export default function Reporting() {
               return (
                 <React.Fragment key={i}>
                   <div className={cellCls}>{left[i] ? `${left[i].w.firstName} ${left[i].w.lastName} ${left[i].w.weightClass?`(${left[i].w.weightClass})`:''}` : ''}</div>
-                  <div className={`${cellCls} font-mono`}>{left[i] ? `${left[i].val}` : ''}</div>
+                  <div className={`${cellCls} font-mono`}>{left[i] ? (
+                    <>
+                      <div>{left[i].val}</div>
+                      {showMissedDates && (() => {
+                        const ds = missingDatesFor(left[i].w.id);
+                        return ds.length ? (
+                          <div className="text-xs text-gray-300 mt-1 leading-snug">
+                            {ds.map(d => `${d.slice(5,7)}/${d.slice(8,10)}/${d.slice(0,4)}`).join(', ')}
+                          </div>
+                        ) : null;
+                      })()}
+                    </>
+                  ) : ''}</div>
                   <div className={cellCls}>{right[i] ? `${right[i].w.firstName} ${right[i].w.lastName} ${right[i].w.weightClass?`(${right[i].w.weightClass})`:''}` : ''}</div>
-                  <div className={`${cellCls} font-mono`}>{right[i] ? `${right[i].val}` : ''}</div>
+                  <div className={`${cellCls} font-mono`}>{right[i] ? (
+                    <>
+                      <div>{right[i].val}</div>
+                      {showMissedDates && (() => {
+                        const ds = missingDatesFor(right[i].w.id);
+                        return ds.length ? (
+                          <div className="text-xs text-gray-300 mt-1 leading-snug">
+                            {ds.map(d => `${d.slice(5,7)}/${d.slice(8,10)}/${d.slice(0,4)}`).join(', ')}
+                          </div>
+                        ) : null;
+                      })()}
+                    </>
+                  ) : ''}</div>
                 </React.Fragment>
               );
             })}

@@ -16,6 +16,7 @@ export async function handler(event) {
     const payload = verifyToken(event);
     const schoolId = payload.school_id;
     const wrestlerName = (event.queryStringParameters && event.queryStringParameters.wrestler) || "";
+    const sexFilter = (event.queryStringParameters && event.queryStringParameters.sex) || ""; // "Male" | "Female" | ""
 
     const client = getClient();
     await client.connect();
@@ -28,10 +29,13 @@ export async function handler(event) {
       JOIN wrestlers w ON wt.wrestler_id = w.id
       WHERE w.school_id = $1
       ${wrestlerName ? ` AND (CONCAT(w.first_name,' ',w.last_name) ILIKE $2)` : ""}
+      ${!wrestlerName && sexFilter ? ` AND w.sex = $2` : (wrestlerName && sexFilter ? ` AND w.sex = $3` : "")}
       ORDER BY wt.date ASC
     `;
 
-    const params = wrestlerName ? [schoolId, `%${wrestlerName}%`] : [schoolId];
+    let params = [schoolId];
+    if (wrestlerName) params.push(`%${wrestlerName}%`);
+    if (sexFilter) params.push(sexFilter);
     const res = await client.query(q, params);
     await client.end();
 
