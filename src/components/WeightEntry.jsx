@@ -73,8 +73,12 @@ export default function WeightEntry() {
         body: { firstName, lastName, date: dateToUse, weight, type }
       });
       notify("Saved", "success");
-     setWeight(""); 
- 
+      setWeight(""); 
+      if (weightInputRef.current) weightInputRef.current.blur();
+      if (document && document.activeElement && typeof document.activeElement.blur === 'function') {
+        try { document.activeElement.blur(); } catch {}
+      }
+
       if (hideWeighedIn) {
         const matched = wrestlers.find(w => (w.firstName || "") + " " + (w.lastName || "") === `${firstName} ${lastName}`);
         if (matched && matched.id != null) {
@@ -187,6 +191,7 @@ export default function WeightEntry() {
           value={weight}
           onChange={e => setWeight(e.target.value)}
           ref={weightInputRef}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
           className="w-full p-2 mb-4 bg-gray-700"
         />
 
