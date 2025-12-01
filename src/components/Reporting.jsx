@@ -14,6 +14,7 @@ export default function Reporting() {
   const [selectAll, setSelectAll] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showMissedDates, setShowMissedDates] = useState(false);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'list'
 
   // Do not auto-refresh data on mount. User must click "Update data".
 
@@ -140,11 +141,33 @@ export default function Reporting() {
     <div>
       <h2 className="text-2xl font-bold mb-4">Reporting</h2>
       <div className="bg-gray-800 p-4 rounded mb-4 flex flex-wrap gap-3 items-center no-print">
-        <select value={reportType} onChange={e=>setReportType(e.target.value)} className="p-2 bg-gray-700">
-          <option value="graphs">Graphs</option>
-          <option value="avg">Average Weight Loss</option>
-          <option value="missing">Missing Practices</option>
-        </select>
+        <div className="flex gap-2">
+          <select value={reportType} onChange={e=>setReportType(e.target.value)} className="p-2 bg-gray-700">
+            <option value="graphs">Graphs</option>
+            <option value="avg">Average Weight Loss</option>
+            <option value="missing">Missing Practices</option>
+          </select>
+          {reportType === 'graphs' && (
+            <div className="bg-gray-700 rounded-md overflow-hidden">
+              <div className="flex text-sm">
+                <button 
+                  type="button" 
+                  onClick={() => setViewMode('cards')} 
+                  className={`px-3 py-2 ${viewMode==='cards'?"bg-purple-600 text-white":"text-gray-200"}`}
+                >
+                  Cards
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setViewMode('list')} 
+                  className={`px-3 py-2 ${viewMode==='list'?"bg-purple-600 text-white":"text-gray-200"}`}
+                >
+                  List
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="bg-gray-700 rounded-md overflow-hidden">
           <div className="flex text-sm">
             <button type="button" onClick={()=>setSexFilter("Male")} className={`px-3 py-2 ${sexFilter==="Male"?"bg-purple-600 text-white":"text-gray-200"}`}>Boys</button>
@@ -182,19 +205,23 @@ export default function Reporting() {
       </div>
 
       <div className="report-print">
-        <div className="hidden print:block text-center mb-4">
-          <div className="text-3xl font-bold">{school?.name || school?.code}</div>
-          <div className="text-xl mt-1">{reportTitle}</div>
-        </div>
 
-      {reportType === "graphs" && (
-        <div className="flex flex-col gap-3">
+    <div className="report-print">
+      <div className="hidden print:block text-center mb-4">
+        <div className="text-3xl font-bold">{school?.name || school?.code}</div>
+        <div className="text-xl mt-1">{reportTitle}</div>
+      </div>
+
+      {reportType === "graphs" && viewMode === 'cards' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {allOrSelected
             .filter(w => (perWrestler.get(w.id) || []).length > 0)
-            .map(w => (
-              <div key={w.id} className="bg-gray-800 p-2 rounded break-inside-avoid print-chart-tile">
-                <div className="text-sm font-semibold mb-1">{w.firstName} {w.lastName} {w.weightClass?`(${w.weightClass})`:""}</div>
-                <div className="chart-fixed" style={{ width: "100%", height: "20vh" }}>
+            .map((w, index) => (
+              <div key={w.id} className="bg-gray-800 p-4 rounded-lg shadow-lg break-inside-avoid print-chart-tile">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold">{w.firstName} {w.lastName} {w.weightClass?`(${w.weightClass})`:''}</h3>
+                </div>
+                <div className="chart-fixed" style={{ width: "100%", height: "200px" }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={graphDataFor(w.id)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#444" />
@@ -209,6 +236,69 @@ export default function Reporting() {
                 </div>
               </div>
             ))}
+        </div>
+      )}
+
+      {reportType === "graphs" && viewMode === 'list' && (
+        <div className="bg-gray-800 rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-700">
+              <tr>
+                <th className="text-left py-3 px-4">Wrestler</th>
+                <th className="text-left py-3 px-4">Weight Class</th>
+                <th className="text-left py-3 px-4">Chart</th>
+                <th className="text-left py-3 px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allOrSelected
+                .filter(w => (perWrestler.get(w.id) || []).length > 0)
+                .map((w, index) => {
+                  const data = graphDataFor(w.id);
+                  const lastRecord = data.length > 0 ? data[data.length - 1] : null;
+                  
+                  return (
+                    <tr 
+                      key={w.id} 
+                      className={`${index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'} hover:bg-gray-700 transition-colors`}
+                    >
+                      <td className="py-3 px-4">
+                        <div className="font-medium">{w.firstName} {w.lastName}</div>
+                      </td>
+                      <td className="py-3 px-4">{w.weightClass || '-'}</td>
+                      <td className="py-3 px-4">
+                        <div className="w-full h-16">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={data}>
+                              <Line type="monotone" dataKey="before" stroke={school?.primary_color || "#a855f7"} dot={false} strokeWidth={2} />
+                              <Line type="monotone" dataKey="after" stroke={school?.secondary_color || "#f59e0b"} dot={false} strokeWidth={2} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex space-x-2">
+                          <button 
+                            className="px-3 py-1 text-sm bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                            onClick={() => {
+                              // Toggle selection
+                              toggleSelected(w.id);
+                            }}
+                          >
+                            {selectedIds.includes(w.id) ? 'Selected' : 'Select'}
+                          </button>
+                          {lastRecord && (
+                            <div className="text-xs text-gray-300 mt-1">
+                              Last: {lastRecord.before} → {lastRecord.after} lbs
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
         </div>
       )}
 
