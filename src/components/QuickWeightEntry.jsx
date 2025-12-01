@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useNotify } from '../context/NotifyContext';
-import api, { apiFetch } from '../utils/api';
+import { apiFetch } from '../utils/api';
 
 const QuickWeightEntry = () => {
   const { schoolName } = useParams();
-  const navigate = useNavigate();
   const { notify } = useNotify();
   const [wrestlers, setWrestlers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
