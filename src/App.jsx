@@ -19,7 +19,6 @@ const MainApp = () => {
 
 
   const location = useLocation();
-  const navigate = useNavigate();
 
   // Simple routing for admin panel and quick entry
   if (location.pathname === "/admin") {
