@@ -18,32 +18,85 @@ const QuickWeightEntry = () => {
 
   // Load school and wrestlers
   useEffect(() => {
+    let isMounted = true;
+    
     const loadData = async () => {
       try {
+        setLoading(true);
+        console.log('Loading school data for:', schoolName);
+        
         // Load school by name
         const schools = await apiFetch('list-schools');
+        console.log('Schools loaded:', schools);
+        
         const schoolData = schools.find(s => 
-          s.name.toLowerCase() === schoolName.toLowerCase() || 
-          s.code.toLowerCase() === schoolName.toLowerCase()
+          (s.name?.toLowerCase() === schoolName.toLowerCase()) || 
+          (s.code?.toLowerCase() === schoolName.toLowerCase())
         );
         
+        console.log('Found school data:', schoolData);
+        
         if (!schoolData) {
-          notify('School not found', 'error');
+          console.error('School not found:', schoolName);
+          if (isMounted) {
+            notify('School not found. Please check the URL and try again.', 'error');
+            setSchool(null);
+          }
           return;
         }
         
-        setSchool(schoolData);
-        
-        // Load wrestlers for the school
-        const wrestlersData = await apiFetch(`wrestlers?school_id=${schoolData.id}`);
-        setWrestlers(wrestlersData);
+        if (isMounted) {
+          setSchool(schoolData);
+          console.log('Loading wrestlers for school ID:', schoolData.id);
+          
+          // Try with the correct endpoint format
+          let wrestlersData = [];
+          try {
+            // First try the direct endpoint
+            wrestlersData = await apiFetch(`get-wrestlers?school_id=${schoolData.id}`);
+            console.log('Wrestlers loaded (direct endpoint):', wrestlersData);
+          } catch (e) {
+            console.log('Direct endpoint failed, trying alternative...');
+            // Fallback to list-wrestlers if get-wrestlers fails
+            const response = await apiFetch('list-wrestlers');
+            wrestlersData = Array.isArray(response) ? 
+              response.filter(w => w.school_id === schoolData.id) : [];
+            console.log('Wrestlers loaded (list-wrestlers endpoint):', wrestlersData);
+          }
+          
+          if (isMounted) {
+            if (!wrestlersData || !Array.isArray(wrestlersData)) {
+              console.error('Invalid wrestlers data received:', wrestlersData);
+              throw new Error('Invalid data format received from server');
+            }
+            setWrestlers(wrestlersData);
+            console.log('Wrestlers set in state:', wrestlersData.length);
+          }
+        }
       } catch (error) {
-        console.error('Error loading data:', error);
-        notify('Failed to load data', 'error');
+        console.error('Error in loadData:', error);
+        if (isMounted) {
+          notify(`Error: ${error.message}`, 'error');
+          setWrestlers([]);
+        }
+      } catch (error) {
+        console.error('Error loading school data:', error);
+        if (isMounted) {
+          notify('Failed to load school data', 'error');
+          setSchool(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [schoolName, notify]);
 
   // Filter wrestlers based on search term
@@ -101,11 +154,23 @@ const QuickWeightEntry = () => {
     }
   };
 
-  if (!school) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="p-8 bg-white rounded-lg shadow-md text-center">
           <h2 className="text-xl font-semibold mb-4">Loading...</h2>
+          <p className="text-gray-600">Please wait while we load the data.</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!school) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="p-8 bg-white rounded-lg shadow-md text-center">
+          <h2 className="text-xl font-semibold mb-4">School Not Found</h2>
+          <p className="text-gray-600">The requested school could not be found. Please check the URL and try again.</p>
         </div>
       </div>
     );
