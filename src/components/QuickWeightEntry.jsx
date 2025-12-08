@@ -78,11 +78,6 @@ const QuickWeightEntry = () => {
         if (isMounted) {
           notify(`Error: ${error.message}`, 'error');
           setWrestlers([]);
-        }
-      } catch (error) {
-        console.error('Error loading school data:', error);
-        if (isMounted) {
-          notify('Failed to load school data', 'error');
           setSchool(null);
         }
       } finally {
